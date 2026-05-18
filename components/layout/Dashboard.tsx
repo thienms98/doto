@@ -1,32 +1,20 @@
-import Habits from "./Habits";
+import { Habit, HabitLog } from '@/app/generated/prisma/client';
+import Habits from './Habits';
 
-export interface Habit {
-  id: number;
-  title: string;
-  frequencyType: "daily" | "weekly" | "monthly";
-  targetPerPeriod: number;
-  color: string;
-  createdAt: Date;
-  archivedAt?: Date;
-}
+export type HabitType = Habit & {
+  logs: HabitLog[];
+  streak: number;
+  isTodayDone: boolean;
+};
 
 export interface DashboardProps {
-  habits: (Habit & {
-    logs: {
-      id: number;
-      completedAt: Date;
-    }[];
-    streak: number;
-    isTodayDone: boolean;
-  })[];
+  habits: HabitType[];
   streak: number;
   weeklyRate: number;
 }
 
 const Dashboard = ({ streak, habits, weeklyRate }: DashboardProps) => {
-  const completedTasks = habits.filter(
-    (item) => item.targetPerPeriod === item.logs.length || item.isTodayDone
-  );
+  const completedTasks = habits.filter((item) => item.targetPerPeriod === item.logs.length || item.isTodayDone);
 
   return (
     <>
