@@ -17,27 +17,27 @@ import { RechartsDevtools } from "@recharts/devtools";
 const data = [
   {
     name: "Page A",
-    uv: 40,
-    pv: 24,
-    amt: 24
+    daily: 40,
+    weekly: 8,
+    monthly: 2
   },
   {
     name: "Page B",
-    uv: 30,
-    pv: 13,
-    amt: 22
+    daily: 30,
+    weekly: 8,
+    monthly: 2
   },
   {
     name: "Page C",
-    uv: 20,
-    pv: 98,
-    amt: 22
+    daily: 20,
+    weekly: 8,
+    monthly: 2
   },
   {
     name: "Page D",
-    uv: 27,
-    pv: 39,
-    amt: 20
+    daily: 27,
+    weekly: 8,
+    monthly: 2
   }
 ];
 
@@ -58,14 +58,14 @@ const Analytics = () => {
           left: 0
         }}
       >
-        <CartesianGrid stroke="#f5f5f5" strokeDasharray="3 3" />
-        <XAxis dataKey="name" niceTicks="snap125" />
-        <YAxis width="auto" niceTicks="snap125" />
+        {/* <CartesianGrid strokeDasharray="3 3" /> */}
+        {/* <XAxis dataKey="name" niceTicks="snap125" />
+        <YAxis width="auto" niceTicks="snap125" /> */}
+        {/* <Legend /> */}
         <Tooltip />
-        <Legend />
-        <Bar dataKey="amt" stackId="a" barSize={20} fill="#8884d8" />
-        <Bar dataKey="pv" stackId="a" barSize={20} fill="#413ea0" />
-        <Bar dataKey="uv" stackId="a" barSize={20} fill="#ff7300" />
+        <Bar dataKey="daily" stackId="a" barSize={100} fill="#8884d8" />
+        <Bar dataKey="weekly" stackId="a" barSize={100} fill="#413ea0" />
+        <Bar dataKey="monthly" stackId="a" barSize={100} fill="#ff7300" />
         <RechartsDevtools />
       </ComposedChart>
     </div>
