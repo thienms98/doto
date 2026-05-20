@@ -1,4 +1,4 @@
-import { Habit, HabitLog } from '@/app/generated/prisma/client';
+import { Habit, HabitLog } from '@/generated/prisma/client';
 import Habits from './Habits';
 
 export type HabitType = Habit & {
