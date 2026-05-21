@@ -1,7 +1,7 @@
 'use client';
 
 import { HabitType } from '../layout/Dashboard';
-import { useForm } from '@tanstack/react-form';
+import { AnyFieldApi, FieldApi, ReactFormExtendedApi, useForm } from '@tanstack/react-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -10,8 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
-const HabitItem = ({ habit, onHabitChecked }: { habit: HabitType; onHabitChecked: (id: number, checked: boolean) => void }) => {
+const HabitItem = ({
+  habit,
+  onHabitChecked,
+}: {
+  habit: HabitType;
+  onHabitChecked: (id: number, checked: boolean) => void;
+}) => {
   return (
     <label
       key={habit.id}
@@ -24,19 +31,29 @@ const HabitItem = ({ habit, onHabitChecked }: { habit: HabitType; onHabitChecked
       <div className="relative z-1">{habit.title}</div>
       <div className="ml-auto flex items-center gap-2 relative z-1">
         {habit.streak && <div className="">🔥{habit.streak}</div>}
-        <input type="checkbox" name="habits" checked={habit.isTodayDone} onChange={(e) => onHabitChecked(habit.id, e.target.checked)} />
+        <input
+          type="checkbox"
+          name="habits"
+          checked={habit.isTodayDone}
+          onChange={(e) => onHabitChecked(habit.id, e.target.checked)}
+        />
       </div>
     </label>
   );
 };
 
 export const habitCreateSchema = z.object({
-  title: z.string().min(5, 'I think you should know what it is.').max(32, 'Ahh. You reach the limit 😅'),
+  title: z
+    .string()
+    .min(5, 'Your habit should have a name 😅')
+    .max(32, 'Ahh. You reach the limit 😅'),
   color: z.string(),
   frequency: z.string(),
   note: z.string().optional(),
   reminder: z.date().optional(),
 });
+
+export type HabitCreateValues = z.infer<typeof habitCreateSchema>;
 
 enum HabitColor {
   VIOLET = '#534ab7',
@@ -47,7 +64,14 @@ enum HabitColor {
   BLUE = '#378add',
 }
 
+enum FormState {
+  IDLE,
+  LOADING,
+}
+
 const HabitCreate = () => {
+  const [formState, setFormState] = useState(FormState.IDLE);
+
   const form = useForm({
     defaultValues: {
       title: 'Create new habit under presure',
@@ -58,6 +82,17 @@ const HabitCreate = () => {
       onSubmit: habitCreateSchema,
     },
     onSubmit: async ({ value }) => {
+      try {
+        setFormState(FormState.LOADING);
+
+        await fetch('/api/habit', {
+          method: 'POST',
+          body: JSON.stringify(value),
+        });
+      } catch {
+      } finally {
+        setFormState(FormState.IDLE);
+      }
       toast('You submitted the following values:', {
         description: (
           <pre className="mt-2 w-[320px] overflow-x-auto rounded-md bg-code p-4 text-code-foreground">
@@ -74,6 +109,7 @@ const HabitCreate = () => {
       });
     },
   });
+
   return (
     <form
       id="bug-report-form"
@@ -86,24 +122,7 @@ const HabitCreate = () => {
         <form.Field name="title">
           {(field) => {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-            return (
-              <Field data-invalid={isInvalid}>
-                <FieldLabel htmlFor={field.name}>Habit name</FieldLabel>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onFocus={(e) => e.target.select()}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  aria-invalid={isInvalid}
-                  placeholder="Login button not working on mobile"
-                  autoComplete="off"
-                  autoFocus
-                />
-                {isInvalid && <FieldError errors={field.state.meta.errors} />}
-              </Field>
-            );
+            return <InputField field={field} isInvalid={isInvalid} title="Habit name" />;
           }}
         </form.Field>
         <form.Field name="color">
@@ -112,11 +131,18 @@ const HabitCreate = () => {
             return (
               <Field data-invalid={isInvalid}>
                 <FieldLabel htmlFor={field.name}>Color</FieldLabel>
-                <RadioGroup defaultValue="daily" className="flex" onValueChange={field.handleChange}>
+                <RadioGroup
+                  defaultValue="daily"
+                  className="flex"
+                  onValueChange={field.handleChange}
+                >
                   {Object.values(HabitColor).map((color, index) => (
                     <Label
                       key={color}
-                      className={cn('size-6 rounded-full', color === field.state.value ? 'ring-2 ring-foreground ring-offset-2' : '')}
+                      className={cn(
+                        'size-6 rounded-full',
+                        color === field.state.value ? 'ring-2 ring-foreground ring-offset-2' : '',
+                      )}
                       style={{ backgroundColor: color }}
                     >
                       <RadioGroupItem value={color} id={`color-${index}`} hidden />
@@ -134,7 +160,11 @@ const HabitCreate = () => {
             return (
               <Field data-invalid={isInvalid}>
                 <FieldLabel htmlFor={field.name}>Frequency</FieldLabel>
-                <RadioGroup defaultValue="daily" className="flex" onValueChange={field.handleChange}>
+                <RadioGroup
+                  defaultValue="daily"
+                  className="flex"
+                  onValueChange={field.handleChange}
+                >
                   <div className="flex items-center gap-3">
                     <RadioGroupItem value="daily" id="daily" hidden className="peer" />
                     <Label
@@ -174,7 +204,7 @@ const HabitCreate = () => {
             );
           }}
         </form.Field>
-        <form.Field name="note">
+        {/* <form.Field name="note">
           {(field) => {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             return (
@@ -190,7 +220,6 @@ const HabitCreate = () => {
                   aria-invalid={isInvalid}
                   placeholder="Ex: 30 minutes"
                   autoComplete="off"
-                  autoFocus
                 />
                 {isInvalid && <FieldError errors={field.state.meta.errors} />}
               </Field>
@@ -213,15 +242,14 @@ const HabitCreate = () => {
                   aria-invalid={isInvalid}
                   placeholder="08:00"
                   autoComplete="off"
-                  autoFocus
                 />
                 {isInvalid && <FieldError errors={field.state.meta.errors} />}
               </Field>
             );
           }}
-        </form.Field>
+        </form.Field> */}
       </FieldGroup>
-      <Field orientation="horizontal" className="flex justify-end">
+      <Field orientation="horizontal" className="flex justify-end mt-5">
         <Button type="button" variant="outline" onClick={() => form.reset()}>
           Reset
         </Button>
@@ -230,6 +258,33 @@ const HabitCreate = () => {
         </Button>
       </Field>
     </form>
+  );
+};
+
+type Props<T extends AnyFieldApi> = {
+  field: T;
+  isInvalid: boolean;
+  title: string;
+  placeholder?: string;
+};
+const InputField = <T extends AnyFieldApi>({ field, isInvalid, title, placeholder }: Props<T>) => {
+  return (
+    <Field data-invalid={isInvalid}>
+      <FieldLabel htmlFor={field.name}>{title}</FieldLabel>
+      <Input
+        id={field.name}
+        name={field.name}
+        value={field.state.value}
+        onBlur={field.handleBlur}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => field.handleChange(e.target.value)}
+        aria-invalid={isInvalid}
+        placeholder={placeholder}
+        autoComplete="off"
+        autoFocus
+      />
+      {isInvalid && <FieldError errors={field.state.meta.errors} />}
+    </Field>
   );
 };
 
