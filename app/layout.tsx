@@ -4,6 +4,8 @@ import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import { Toaster } from 'sonner';
+import { SessionProvider } from 'next-auth/react';
+import Providers from '@/components/layout/Providers';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -30,9 +32,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full grid grid-cols-[auto_1fr] grid-rows-[auto_1fr]">
-        <Header />
-        <Sidebar />
-        <main className="bg-secondary font-sans">{children}</main>
+        <Providers>
+          <Header />
+          <Sidebar />
+          <main className="bg-secondary font-sans">{children}</main>
+        </Providers>
         {modal}
         <Toaster />
       </body>
