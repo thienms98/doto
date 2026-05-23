@@ -1,14 +1,17 @@
-import NextAuth from 'next-auth';
+import NextAuth, { getServerSession } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from './prisma';
 import Credentials from 'next-auth/providers/credentials';
 import { verifyPassword } from '@/utils/password';
 import { getUserFromDb } from '@/utils/db';
+import { DOTO_ERROR } from './utils';
 
 const handler = NextAuth({
   session: {
     strategy: 'jwt',
+    maxAge: 60 * 60,
   },
+  secret: process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
@@ -19,23 +22,33 @@ const handler = NextAuth({
         password: {},
       },
       authorize: async (credentials) => {
-        if (!credentials) return null;
+        if (!credentials?.email || !credentials?.email) throw new Error('Invalid credentials.');
 
         const user = await getUserFromDb(credentials.email);
-        const isVerified = user?.password && (await verifyPassword(credentials.password, user.password));
+        if (!user) throw new Error('Invalid credentials.');
 
-        if (!user) {
-          // No user found, so this is their first attempt to login
-          // Optionally, this is also the place you could do a user registration
-          throw new Error('Invalid credentials.');
+        const { password, ...rest } = user;
+        const isVerified = password && (await verifyPassword(credentials.password, password));
+
+        if (!isVerified) {
+          throw new Error('Your email or password is not correct');
         }
 
-        // return user object with their profile data
-        return user;
+        return rest;
       },
     }),
   ],
 });
+
+export const authenticate = async () => {
+  const session = await getServerSession();
+
+  const isExpired = session?.expires && new Date(session.expires).getTime() < Date.now();
+
+  if (!session?.user || isExpired) throw new Error(DOTO_ERROR.UNAUTHENTICATED);
+
+  return session.user;
+};
 
 export default handler;
 export const { handlers, auth, signIn, signOut } = handler;

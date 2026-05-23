@@ -24,7 +24,7 @@ const formSchema = z.object({
 });
 
 export function LoginForm() {
-  const { redirect } = useParams() as { redirect?: string };
+  const { callbackUrl = '/' } = useParams() as { callbackUrl?: string };
 
   const form = useForm({
     defaultValues: {
@@ -35,13 +35,10 @@ export function LoginForm() {
       onSubmit: formSchema,
     },
     onSubmit: async ({ value }) => {
-      const res = await signIn(
-        'credentials',
-        {
-          callbackUrl: redirect,
-        },
-        value,
-      );
+      const res = await signIn('credentials', {
+        callbackUrl,
+        ...value,
+      });
 
       console.log(res);
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { HabitType } from '../layout/Dashboard';
-import { AnyFieldApi, FieldApi, ReactFormExtendedApi, useForm } from '@tanstack/react-form';
+import { AnyFieldApi, useForm } from '@tanstack/react-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -11,14 +11,9 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-const HabitItem = ({
-  habit,
-  onHabitChecked,
-}: {
-  habit: HabitType;
-  onHabitChecked: (id: number, checked: boolean) => void;
-}) => {
+const HabitItem = ({ habit, onHabitChecked }: { habit: HabitType; onHabitChecked: (id: number, checked: boolean) => void }) => {
   return (
     <label
       key={habit.id}
@@ -31,22 +26,14 @@ const HabitItem = ({
       <div className="relative z-1">{habit.title}</div>
       <div className="ml-auto flex items-center gap-2 relative z-1">
         {habit.streak && <div className="">🔥{habit.streak}</div>}
-        <input
-          type="checkbox"
-          name="habits"
-          checked={habit.isTodayDone}
-          onChange={(e) => onHabitChecked(habit.id, e.target.checked)}
-        />
+        <input type="checkbox" name="habits" checked={habit.isTodayDone} onChange={(e) => onHabitChecked(habit.id, e.target.checked)} />
       </div>
     </label>
   );
 };
 
 export const habitCreateSchema = z.object({
-  title: z
-    .string()
-    .min(5, 'Your habit should have a name 😅')
-    .max(32, 'Ahh. You reach the limit 😅'),
+  title: z.string().min(5, 'Your habit should have a name 😅').max(32, 'Ahh. You reach the limit 😅'),
   color: z.string(),
   frequency: z.string(),
   note: z.string().optional(),
@@ -71,6 +58,7 @@ enum FormState {
 
 const HabitCreate = () => {
   const [formState, setFormState] = useState(FormState.IDLE);
+  const { back } = useRouter();
 
   const form = useForm({
     defaultValues: {
@@ -89,6 +77,8 @@ const HabitCreate = () => {
           method: 'POST',
           body: JSON.stringify(value),
         });
+
+        back();
       } catch {
       } finally {
         setFormState(FormState.IDLE);
@@ -131,18 +121,11 @@ const HabitCreate = () => {
             return (
               <Field data-invalid={isInvalid}>
                 <FieldLabel htmlFor={field.name}>Color</FieldLabel>
-                <RadioGroup
-                  defaultValue="daily"
-                  className="flex"
-                  onValueChange={field.handleChange}
-                >
+                <RadioGroup defaultValue="daily" className="flex" onValueChange={field.handleChange}>
                   {Object.values(HabitColor).map((color, index) => (
                     <Label
                       key={color}
-                      className={cn(
-                        'size-6 rounded-full',
-                        color === field.state.value ? 'ring-2 ring-foreground ring-offset-2' : '',
-                      )}
+                      className={cn('size-6 rounded-full', color === field.state.value ? 'ring-2 ring-foreground ring-offset-2' : '')}
                       style={{ backgroundColor: color }}
                     >
                       <RadioGroupItem value={color} id={`color-${index}`} hidden />
@@ -160,11 +143,7 @@ const HabitCreate = () => {
             return (
               <Field data-invalid={isInvalid}>
                 <FieldLabel htmlFor={field.name}>Frequency</FieldLabel>
-                <RadioGroup
-                  defaultValue="daily"
-                  className="flex"
-                  onValueChange={field.handleChange}
-                >
+                <RadioGroup defaultValue="daily" className="flex" onValueChange={field.handleChange}>
                   <div className="flex items-center gap-3">
                     <RadioGroupItem value="daily" id="daily" hidden className="peer" />
                     <Label
@@ -250,10 +229,7 @@ const HabitCreate = () => {
         </form.Field> */}
       </FieldGroup>
       <Field orientation="horizontal" className="flex justify-end mt-5">
-        <Button type="button" variant="outline" onClick={() => form.reset()}>
-          Reset
-        </Button>
-        <Button type="submit" form="bug-report-form">
+        <Button type="submit" form="bug-report-form" disabled={formState === FormState.LOADING}>
           Submit
         </Button>
       </Field>
