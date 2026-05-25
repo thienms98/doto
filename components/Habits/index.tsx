@@ -10,10 +10,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useHabitStore } from '@/store/habit.store';
 
 const HabitItem = ({ habit, onHabitChecked }: { habit: HabitType; onHabitChecked: (id: number, checked: boolean) => void }) => {
+  const timeoutRef = useRef<NodeJS.Timeout>(null);
+
+  const updateHabitCheck = async (id: number, checked: boolean) => {
+    try {
+      await fetch(`/api/habit/${habit.id}/log`, {
+        method: 'POST',
+        body: JSON.stringify({
+          isTodayDone: checked,
+        }),
+      });
+    } catch {}
+  };
+
+  const onHabitCheck = (id: number, checked: boolean) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    onHabitChecked(id, checked);
+
+    timeoutRef.current = setTimeout(() => updateHabitCheck(id, checked), 500);
+  };
+
   return (
     <label
       key={habit.id}
@@ -26,7 +47,7 @@ const HabitItem = ({ habit, onHabitChecked }: { habit: HabitType; onHabitChecked
       <div className="relative z-1">{habit.title}</div>
       <div className="ml-auto flex items-center gap-2 relative z-1">
         {habit.streak && <div className="">🔥{habit.streak}</div>}
-        <input type="checkbox" name="habits" checked={habit.isTodayDone} onChange={(e) => onHabitChecked(habit.id, e.target.checked)} />
+        <input type="checkbox" name="habits" checked={habit.isTodayDone} onChange={(e) => onHabitCheck(habit.id, e.target.checked)} />
       </div>
     </label>
   );
@@ -57,6 +78,7 @@ enum FormState {
 }
 
 const HabitCreate = () => {
+  const addHabits = useHabitStore((state) => state.addHabits);
   const [formState, setFormState] = useState(FormState.IDLE);
   const { back } = useRouter();
 
@@ -78,6 +100,7 @@ const HabitCreate = () => {
           body: JSON.stringify(value),
         });
 
+        addHabits([value]);
         back();
       } catch {
       } finally {

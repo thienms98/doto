@@ -10,7 +10,11 @@ export enum DOTO_ERROR {
   UNAUTHENTICATED = 'Unauthenticated',
 }
 
-export const errResponse = (msg: string, status: number) => {
+export const successResponse = (payload: any, status = 200) => {
+  return NextResponse.json(payload, { status });
+};
+
+export const errResponse = (msg: string, status = 500) => {
   switch (msg) {
     case DOTO_ERROR.UNAUTHENTICATED:
       return NextResponse.json({ msg }, { status: 401 });

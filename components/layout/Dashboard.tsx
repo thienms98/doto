@@ -3,6 +3,7 @@
 import { Habit, HabitLog } from '@/generated/prisma/client';
 import Habits from './Habits';
 import { useEffect, useState } from 'react';
+import { useHabitStore } from '@/store/habit.store';
 
 export type HabitType = Habit & {
   logs: HabitLog[];
@@ -17,13 +18,12 @@ export interface DashboardProps {
 }
 
 const Dashboard = ({ streak, weeklyRate }: DashboardProps) => {
-  const [habits, setHabits] = useState([]);
+  const { addHabits } = useHabitStore();
 
   useEffect(() => {
-    console.log('getting habits');
     fetch('/api/habit')
       .then((res) => res.json())
-      .then(setHabits);
+      .then(addHabits);
   }, []);
 
   // const completedTasks = habits.filter((item) => item.targetPerPeriod === item.logs.length || item.isTodayDone);
@@ -45,7 +45,7 @@ const Dashboard = ({ streak, weeklyRate }: DashboardProps) => {
         </div>
       </section>
 
-      {habits.length ? <Habits habits={habits} /> : 'Bạn chưa có thói quen nào'}
+      <Habits />
     </>
   );
 };

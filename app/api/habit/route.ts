@@ -26,7 +26,24 @@ export async function GET() {
       take: 6,
     });
 
-    return NextResponse.json(habits);
+    const nomarlizedHabits = habits.map((habit) => {
+      let streak = 0;
+      let isTodayDone = false;
+      const interval = 24 * 60 * 60 * 1000;
+      const today = new Date().setHours(0, 0, 0, 0);
+
+      const logTimes = habit.logs.map((log) => new Date(log.completedAt).setHours(0, 0, 0, 0)).sort((a, b) => b - a);
+      for (let i = 0; i < logTimes.length - 1; i++) {
+        if (today === logTimes[i]) isTodayDone = true;
+
+        if (logTimes[i] - logTimes[i + 1] > interval) break;
+        streak++;
+      }
+
+      return { ...habit, streak, isTodayDone };
+    });
+
+    return NextResponse.json(nomarlizedHabits);
   } catch (err: any) {
     return NextResponse.json({ msg: err.message }, { status: 500 });
   }
